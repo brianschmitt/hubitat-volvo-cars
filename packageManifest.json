@@ -1,0 +1,32 @@
+{
+  "packageName": "Hubitat Volvo Car Package",
+  "author": "Brian Schmitt",
+  "version": "0.1.0",
+  "dateReleased": "2025-05-01",
+  "documentationLink": "https://github.com/brianschmitt/hubitat-volvo-cars/blob/main/README.md",
+  "communityLink": "https://community.hubitat.com/t/release-volvo-cars-integration-official-api-for-hubitat/153428",
+  "minimumHubCoreVersion": "2.2.8",
+  "license": "MIT",
+  "apps": [
+    {
+      "id": "brianschmitt-volvo-cars-app",
+      "name": "Volvo Cars",
+      "namespace": "brianschmitt",
+      "location": "https://raw.githubusercontent.com/brianschmitt/hubitat-volvo-cars/main/app/volvo-cars-app.groovy",
+      "required": true,
+      "oauth": false,
+      "configPage": true,
+      "version": "0.1.0"
+    }
+  ],
+  "drivers": [
+    {
+      "id": "brianschmitt-volvo-cars-driver",
+      "name": "Volvo Cars Driver",
+      "namespace": "brianschmitt",
+      "location": "https://raw.githubusercontent.com/brianschmitt/hubitat-volvo-cars/main/drivers/volvo-cars-driver.groovy",
+      "required": true,
+      "version": "0.1.0"
+    }
+  ]
+}

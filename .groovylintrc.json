@@ -1,0 +1,23 @@
+{
+    "extends": "recommended",
+    "rules": {
+        "DuplicateListLiteral": {
+            "enabled": false
+        },
+        "DuplicateMapLiteral": {
+            "enabled": false
+        },
+        "DuplicateNumberLiteral": {
+            "enabled": false
+        },
+        "DuplicateStringLiteral": {
+            "enabled": false
+        },
+        "NoDef": {
+            "enabled": false
+        },
+        "UnnecessaryGetter": {
+            "enabled": false
+        }
+    }
+}

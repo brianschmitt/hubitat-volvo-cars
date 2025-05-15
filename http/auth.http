@@ -1,0 +1,152 @@
+###
+# Volvo OAuth 2.0 Authorization
+#
+# This file demonstrates the Authorization Code Flow with PKCE and Token Refresh.
+#
+# ------------------------------------------------------------------------------------
+# IMPORTANT PRE-REQUISITES:
+# 1. You must have registered your application with Volvo and received a
+#    `client_id` and `client_secret`.
+# 2. Your `redirect_uri` must be registered for your client_id.
+# 3. For PKCE (which is enforced for new applications):
+#    - Generate a cryptographically random string for `code_verifier`.
+#      (e.g., 43-128 characters, A-Z, a-z, 0-9, '-', '.', '_', '~')
+#    - Calculate `code_challenge` = BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))
+#      Many online tools or libraries can help with this. Example:
+#      - Verifier: anexampleverifierthatislongenoughandrandomlooking
+#      - SHA256(verifier) (hex): d91b8dae4d06f1f594438e5828f6352f7b7719597291e9808f96f9c7bf1f9374
+#      - Base64URLEncode(sha256_bytes): 2RuNrk0G8fWUQ45YKP原子OyfexlZcpFpgj5b5x7/x5HQ (Note: ensure no padding '=' and use URL-safe characters)
+# ------------------------------------------------------------------------------------
+
+# --- Configuration Variables ---
+@volvoAuthUrl = https://volvoid.eu.volvocars.com/as/authorization.oauth2
+@volvoTokenUrl = https://volvoid.eu.volvocars.com/as/token.oauth2
+
+# !! REPLACE THESE WITH YOUR ACTUAL VALUES !!
+@clientId = YOUR_CLIENT_ID
+@clientSecret = YOUR_CLIENT_SECRET
+@redirectUri = YOUR_APP_REDIRECT_URI # e.g., http://localhost:3000/callback (ensure this is URL-encoded for Step 1)
+@scopes = openid profile conve:vehicle_relation energy:recharge_status # Space-separated list of scopes (ensure this is URL-encoded for Step 1)
+
+
+# This will be populated manually after Step 1
+@authorizationCode = PASTE_AUTHORIZATION_CODE_FROM_REDIRECT_URI_HERE
+
+# This will be populated manually after Step 2
+@refreshToken = PASTE_REFRESH_TOKEN_FROM_STEP_2_RESPONSE_HERE
+
+# --- Helper for Basic Auth Header ---
+# The Authorization header for token requests needs: Basic <base64-encoded client_id:client_secret>
+# You'll need to generate this value.
+# Example (using dummy values):
+# client_id: myclient
+# client_secret: mysecret
+# string to encode: "myclient:mysecret"
+# base64 encoded: "bXljbGllbnQ6bXlzZWNyZXQ="
+# So the header would be: Authorization: Basic bXljbGllbnQ6bXlzZWNyZXQ=
+# !! CALCULATE AND PASTE YOUR ENCODED CREDENTIALS HERE !!
+@base64ClientCredentials = CALCULATE_AND_PASTE_BASE64_ENCODED_CLIENT_ID_COLON_CLIENT_SECRET_HERE
+
+
+###
+# ------------------------------------------------------------------------------------
+# STEP 1: Redirect end-user to Volvo ID login page (MANUAL STEP)
+# ------------------------------------------------------------------------------------
+#
+# Construct the URL below with your actual URL-encoded redirectUri and scopes.
+# Then, open this URL in a web browser.
+# The user will authenticate and authorize your application.
+# After successful authorization, the browser will be redirected to your `redirect_uri`
+# with an `authorization_code` and `state` (if you provided one) in the query string.
+#
+# Example URL to open in browser (replace placeholders with URL-encoded values):
+# {{volvoAuthUrl}}?response_type=code&client_id={{clientId}}&redirect_uri={{redirectUri_URL_ENCODED}}&scope={{scopes_URL_ENCODED}}&state=someRandomState123&code_challenge={{codeChallenge}}&code_challenge_method={{codeChallengeMethod}}
+#
+# NOTE: `redirect_uri` and `scope` values in the URL *must* be URL encoded.
+#       e.g., for @redirectUri = http://localhost:3000/callback
+#             URL encoded = http%3A%2F%2Flocalhost%3A3000%2Fcallback
+#       e.g., for @scopes = openid profile conve:vehicle_relation
+#             URL encoded = openid%20profile%20conve%3Avehicle_relation
+#
+# After the redirect, copy the `code` value from the browser's address bar
+# and paste it into the `@authorizationCode` variable above.
+#
+# For example, if your redirect_uri is `http://localhost:3000/callback` and you are redirected to:
+# `http://localhost:3000/callback?code=THIS_IS_THE_CODE&state=someRandomState123`
+# Then, `@authorizationCode` should be `THIS_IS_THE_CODE`.
+###
+
+# This is just a comment block. The actual request for Step 1 is done in a browser.
+# You can use an online URL encoder for `redirectUri` and `scopes`.
+
+
+###
+# ------------------------------------------------------------------------------------
+# STEP 2: Exchange Authorization Code for an Access Token (with PKCE)
+# ------------------------------------------------------------------------------------
+#
+# This request exchanges the `authorization_code` (obtained in Step 1)
+# for an `access_token` and `refresh_token`.
+#
+# Ensure `@authorizationCode`, `@clientId`, `@clientSecret`, `@redirectUri`,
+# `@codeVerifier` and `@base64ClientCredentials` are correctly set.
+#
+# The `redirect_uri` here should be the *exact same* (non-URL-encoded in the body,
+# but the documentation says "Should be URL encoded" - be mindful of this,
+# typically form bodies don't require pre-encoding of values if Content-Type is x-www-form-urlencoded,
+# but we follow the spec's explicit instruction) value as used in Step 1.
+#
+@name ExchangeCodeForToken
+POST {{volvoTokenUrl}}
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic {{base64ClientCredentials}}
+
+grant_type=authorization_code
+&code={{authorizationCode}}
+&redirect_uri={{redirectUri}}
+&client_id={{clientId}}
+&code_verifier={{codeVerifier}}
+
+# Expected response:
+# {
+#   "access_token": "...",
+#   "refresh_token": "...",
+#   "token_type": "Bearer",
+#   "expires_in": 3600
+# }
+#
+# Copy the `refresh_token` from the response and paste it into the
+# `@refreshToken` variable above for use in Step 3.
+###
+
+
+###
+# ------------------------------------------------------------------------------------
+# STEP 3: Refresh the Access Token
+# ------------------------------------------------------------------------------------
+#
+# This request uses the `refresh_token` (obtained in Step 2) to get a new
+# `access_token` (and potentially a new `refresh_token` if rotation is enabled).
+#
+# Ensure `@refreshToken`, `@clientId`, `@clientSecret`, and `@base64ClientCredentials`
+# are correctly set.
+#
+@name RefreshAccessToken
+POST {{volvoTokenUrl}}
+Content-Type: application/x-www-form-urlencoded
+Authorization: Basic {{base64ClientCredentials}}
+
+grant_type=refresh_token
+&refresh_token={{refreshToken}}
+&client_id={{clientId}}
+
+# Expected response:
+# {
+#   "access_token": "...",
+#   "refresh_token": "...", // This might be a new refresh token
+#   "token_type": "Bearer",
+#   "expires_in": 3600
+# }
+#
+# If you receive a new `refresh_token`, update the `@refreshToken` variable.
+###

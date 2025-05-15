@@ -1,0 +1,25 @@
+###
+# Location API v1.0
+#
+# Replace placeholders with your actual values.
+# - {{vccApiKey}}
+# - {{accessToken}}
+# You can also update {{vin}} if needed.
+# {{vccApiOperationId}} will generate a unique ID for each request if your HTTP client supports it (e.g., {{$randomUUID}} or {{$guid}}).
+###
+
+@baseUrl = https://api.volvocars.com/location
+@vin = YOUR_VEHICLE_VIN
+@vccApiKey = YOUR_VCC_API_KEY
+@accessToken = YOUR_ACCESS_TOKEN
+@vccApiOperationId = {{$randomUUID}}
+
+###
+# @name GetVehicleLocation
+# Summary: Get last known location
+# Description: Get last known location
+GET {{baseUrl}}/v1/vehicles/{{vin}}/location
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/json

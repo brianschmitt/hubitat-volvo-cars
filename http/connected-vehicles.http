@@ -1,0 +1,273 @@
+###
+# Connected Vehicle API v2
+#
+# Replace placeholders with your actual values.
+# - {{vccApiKey}}
+# - {{accessToken}}
+# You can also update {{vin}} if needed.
+# {{vccApiOperationId}} will generate a unique ID for each request if your HTTP client supports it (e.g., {{$randomUUID}} or {{$guid}}).
+###
+
+@baseUrl = https://api.volvocars.com/connected-vehicle/v2
+@vin = YOUR_VEHICLE_VIN
+@vccApiKey = YOUR_VCC_API_KEY
+@accessToken = YOUR_ACCESS_TOKEN
+@vccApiOperationId = {{$randomUUID}}
+
+###
+# @name InvokeUnlock
+# Summary: Unlock doors
+# Description: Used to send an unlock command to the vehicle.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/unlock
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{}
+
+###
+# @name InvokeLock
+# Summary: Lock doors
+# Description: Used to send a lock command to the vehicle.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/lock
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{}
+
+###
+# @name InvokeHonk
+# Summary: Honk horn
+# Description: Used to send a honk command to the vehicle.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/honk
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{}
+
+###
+# @name InvokeFlash
+# Summary: Flash exterior lights
+# Description: Used to send a flash command to the vehicle.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/flash
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{}
+
+###
+# @name InvokeEngineStop
+# Summary: Stop Engine
+# Description: Used to send a engine stop command to the vehicle.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/engine-stop
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{}
+
+###
+# @name InvokeEngineStart
+# Summary: Start Engine
+# Description: Command used to start the engine of the vehicle. To check which vehicles support this function please call [List commands](/apis/connected-vehicle/endpoints/commands/#list-commands).
+# Request Body: The minimum runtimeMinutes value is 0 and maximum 15.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/engine-start
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{
+  "runtimeMinutes": 0
+}
+
+###
+# @name InvokeClimatizationStop
+# Summary: Stop climatisation
+# Description: Used to send a climatisation stop command to the vehicle.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/climatization-stop
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{}
+
+###
+# @name InvokeClimatizationStart
+# Summary: Start climatisation
+# Description: Used to send a climatisation start command to the vehicle.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/climatization-start
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{}
+
+###
+# @name GetVehicleList
+# Summary: List vehicles
+# Description: Provides all current valid relations between a Volvo Id (user) and its connected vehicles. Returns a list of VINs. Required Scope(s): conve:vehicle_relation
+GET {{baseUrl}}/vehicles
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetVehicleDetails
+# Summary: Get vehicle details
+# Description: Provides details about the vehicle such as model, model-year etc. Required Scope(s): conve:vehicle_relation
+GET {{baseUrl}}/vehicles/{{vin}}
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetWindowStatus
+# Summary: Get window status
+# Description: Vehicle's Latest Window Status Values
+GET {{baseUrl}}/vehicles/{{vin}}/windows
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetWarnings
+# Summary: Get warnings
+# Description: Vehicle's Latest Warning Values like bulb failure
+GET {{baseUrl}}/vehicles/{{vin}}/warnings
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetTyrePressureValues
+# Summary: Get tyres status
+# Description: Endpoint used to get vehicle's latest tyre status values.
+GET {{baseUrl}}/vehicles/{{vin}}/tyres
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetStatistics
+# Summary: Get statistics
+# Description: Endpoint used to get vehicle values grouped under the category of statistics. The latest retrieved value is presented upon a successful execution.
+GET {{baseUrl}}/vehicles/{{vin}}/statistics
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetOdometer
+# Summary: Get odometer value
+# Description: Vehicle's latest odometer value in km
+GET {{baseUrl}}/vehicles/{{vin}}/odometer
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetFuelAmount
+# Summary: Get fuel amount
+# Description: Vehicle's Latest Fuel Amount in Liters
+GET {{baseUrl}}/vehicles/{{vin}}/fuel
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetEngineDiagnostics
+# Summary: Get engine diagnostic values
+# Description: Vehicle's Latest Engine Diagnostic Values such as engine-coolant-level, oil level etc.
+GET {{baseUrl}}/vehicles/{{vin}}/engine
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetDoorAndLockStatus
+# Summary: Get door and lock status
+# Description: Vehicle's Door and Lock Status Values
+GET {{baseUrl}}/vehicles/{{vin}}/doors
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetDiagnostics
+# Summary: Get diagnostic values
+# Description: Vehicle's Latest Diagnostic Values
+GET {{baseUrl}}/vehicles/{{vin}}/diagnostics
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetCommandList
+# Summary: List commands
+# Description: Used to list the commands which can be sent to the vehicle
+GET {{baseUrl}}/vehicles/{{vin}}/commands
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetCommandsAccessibility
+# Summary: Get accessibility status
+# Description: Check if vehicle is accessible to send invocation commands. If not available a unavailable reason is displayed.
+GET {{baseUrl}}/vehicles/{{vin}}/command-accessibility
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetBrakeStatus
+# Summary: Get brake fluid level
+# Description: Vehicle's Latest Brake Status Values like brake fluid level
+GET {{baseUrl}}/vehicles/{{vin}}/brakes
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name GetEngineStatus
+# Summary: Get engine status
+# Description: Vehicle's latest engine status value.
+GET {{baseUrl}}/vehicles/{{vin}}/engine-status
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+
+###
+# @name InvokeLockReducedGuard
+# Summary: Lock doors with reduced guard
+# Description: Used to send a lock with reduced guard command to the vehicle.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/lock-reduced-guard
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{}
+
+###
+# @name InvokeHonkFlash
+# Summary: Honk and Flash
+# Description: Used to send a honk & flash command to the vehicle.
+POST {{baseUrl}}/vehicles/{{vin}}/commands/honk-flash
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Content-Type: application/json
+
+{}

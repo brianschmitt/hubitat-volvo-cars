@@ -1,0 +1,95 @@
+###
+# Energy API v1.0
+#
+# Replace placeholders with your actual values.
+# - {{vccApiKey}}
+# - {{accessToken}}
+# You can also update {{vin}} if needed.
+# {{vccApiOperationId}} will generate a unique ID for each request if your HTTP client supports it (e.g., {{$randomUUID}} or {{$guid}}).
+###
+
+@baseUrl = https://api.volvocars.com/energy
+@vin = YOUR_VEHICLE_VIN
+@vccApiKey = YOUR_VCC_API_KEY
+@accessToken = YOUR_ACCESS_TOKEN
+@vccApiOperationId = {{$randomUUID}}
+
+###
+# @name GetRechargeStatus
+# Summary: Get latest recharge information
+# Description: Vehicle's latest recharge information
+GET {{baseUrl}}/v1/vehicles/{{vin}}/recharge-status
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/vnd.volvocars.api.energy.vehicledata.v1+json
+
+###
+# @name GetBatteryChargeLevel
+# Summary: Get battery charge level
+# Description: Vehicle's latest battery charge level in percentage
+GET {{baseUrl}}/v1/vehicles/{{vin}}/recharge-status/battery-charge-level
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/vnd.volvocars.api.energy.vehicledata.v1+json
+
+###
+# @name GetElectricRange
+# Summary: Get electric range
+# Description: Vehicle's latest electric range in kilometers
+GET {{baseUrl}}/v1/vehicles/{{vin}}/recharge-status/electric-range
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/vnd.volvocars.api.energy.vehicledata.v1+json
+
+###
+# @name GetEstimatedChargingTime
+# Summary: Get estimated charging time
+# Description: Vehicle's latest estimated charging time in minutes
+GET {{baseUrl}}/v1/vehicles/{{vin}}/recharge-status/estimated-charging-time
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/vnd.volvocars.api.energy.vehicledata.v1+json
+
+###
+# @name GetChargingConnectionStatus
+# Summary: Get charging connection status
+# Description: Vehicle's latest charging connection status
+GET {{baseUrl}}/v1/vehicles/{{vin}}/recharge-status/charging-connection-status
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/vnd.volvocars.api.energy.vehicledata.v1+json
+
+###
+# @name GetChargingSystemStatus
+# Summary: Get charging system status
+# Description: Vehicle's latest charging system status
+GET {{baseUrl}}/v1/vehicles/{{vin}}/recharge-status/charging-system-status
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/vnd.volvocars.api.energy.vehicledata.v1+json
+
+###
+# @name GetTargetBatteryChargeLevel
+# Summary: Get target battery charge level
+# Description: Vehicle's target battery charge level in percentage
+GET {{baseUrl}}/v1/vehicles/{{vin}}/recharge-status/target-battery-charge-level
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/vnd.volvocars.api.energy.targetbatterychargelevelresponse.v1+json
+
+###
+# @name GetChargingCurrentLimit
+# Summary: Get charging current limit
+# Description: Vehicle's charging current limit in ampere
+GET {{baseUrl}}/v1/vehicles/{{vin}}/recharge-status/charging-current-limit
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/vnd.volvocars.api.energy.chargingcurrentlimitresponse.v1+json

@@ -1,0 +1,46 @@
+###
+# Extended Vehicle API v1.0
+#
+# Replace placeholders with your actual values.
+# - {{vccApiKey}}
+# - {{accessToken}}
+# You can also update {{vin}} and {{resourceName}} if needed.
+# {{vccApiOperationId}} will generate a unique ID for each request if your HTTP client supports it (e.g., {{$randomUUID}} or {{$guid}}).
+###
+
+@baseUrl = https://api.volvocars.com/extended-vehicle
+@vin = YOUR_VEHICLE_VIN
+@resourceName = odometer # Example resource, change as needed (e.g., cabOpen, engineStatus)
+@vccApiKey = YOUR_VCC_API_KEY
+@accessToken = YOUR_ACCESS_TOKEN
+@vccApiOperationId = {{$randomUUID}}
+
+###
+# @name GetVehicleList
+# Summary: Get Vehicle List
+# Description: Provides all current valid relations between an Volvo Id (user) and its connected vehicles. Returns a list of VIN numbers together with timestamp of relation
+GET {{baseUrl}}/v1/vehicles
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/json
+
+###
+# @name GetResourceList
+# Summary: Get Resource List
+# Description: used to get a list of the available resources (status-fields) to the accessing-party
+GET {{baseUrl}}/v1/vehicles/{{vin}}/resources
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/json
+
+###
+# @name GetResourceValue
+# Summary: Get Resource Value
+# Description: used to get the latest collected value of the specified resource
+GET {{baseUrl}}/v1/vehicles/{{vin}}/resources/{{resourceName}}
+vcc-api-key: {{vccApiKey}}
+Authorization: Bearer {{accessToken}}
+vcc-api-operationId: {{vccApiOperationId}}
+Accept: application/json
