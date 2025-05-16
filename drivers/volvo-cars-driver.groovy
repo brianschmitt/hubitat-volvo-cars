@@ -5,7 +5,7 @@
  */
 
 String appName() { return 'Volvo Cars' }
-String appVersion() { return '0.1.0' }
+String appVersion() { return '0.2.0' }
 String nameSpace() { return 'brianschmitt' }
 
 metadata {
