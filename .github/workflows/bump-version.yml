@@ -79,30 +79,36 @@ jobs:
             echo "Processing file: $file"
 
             # Use awk with a here-document for safer quoting
-            # The script itself is now clean within the 'EOF_AWK' markers
-            # '-f /dev/stdin' tells awk to read the script from standard input
-            awk -v new_v="${NEW_VERSION}" -f /dev/stdin "$file" << 'EOF_AWK'
-            # Awk script starts here
-            {
-              # Look for the appVersion() line returning a single-quoted string
-              # Escape parentheses and curly braces for regex matching
-              # Using '[^']*' to match any characters *except* a single quote, between the quotes
-              if ($0 ~ /String appVersion\(\) \{ return '[^']*' \}/) {
-                  # Use gensub to replace the content inside the single quotes
-                  # Capture the start of the line up to the first quote (group 1)
-                  # Capture the end of the line from the second quote (group 2)
-                  # Replace with group 1 + new_v + group 2
-                  # Ensure we use the correct regex and groups for gensub
-                  print gensub(/^(.*String appVersion\(\) \{ return ')[^']*('.*)$/, "\\1" new_v "\\2", "g", $0);
-              } else {
-                  # Print lines that do not match
-                  print;
-              }
-            }
-            # Awk script ends here
-            EOF_AWK
-            # The rest remains the same - redirect awk output and move the file
-             > "$file.tmp" && mv "$file.tmp" "$file"
+            # Redirect awk output to a temporary file *on the same line* as the awk command
+            awk -v new_v="${NEW_VERSION}" -f /dev/stdin "$file" > "$file.tmp" << 'EOF_AWK'
+# Awk script starts here
+{
+  # Look for the appVersion() line returning a single-quoted string
+  # Escape parentheses and curly braces for regex matching
+  # Using '[^']*' to match any characters *except* a single quote, between the quotes
+  if ($0 ~ /String appVersion\(\) \{ return '[^']*' \}/) {
+      # Use gensub to replace the content inside the single quotes
+      # Capture the start of the line up to the first quote (group 1)
+      # Capture the end of the line from the second quote (group 2)
+      # Replace with group 1 + new_v + group 2
+      # Ensure we use the correct regex and groups for gensub
+      print gensub(/^(.*String appVersion\(\) \{ return ')[^']*('.*)$/, "\\1" new_v "\\2", "g", $0);
+  } else {
+      # Print lines that do not match
+      print;
+  }
+}
+# Awk script ends here
+EOF_AWK
+
+            # Move the temporary file to replace the original *after* the awk command finishes
+            # Check if the temp file was created (awk succeeded) before moving
+            if [ -f "$file.tmp" ]; then
+              mv "$file.tmp" "$file"
+            else
+              echo "Error: awk failed or produced no output for $file."
+              # Optionally, exit the script or handle this error differently
+            fi
 
             # Optional: Verify change in file (for debugging)
             # echo "After update:"
