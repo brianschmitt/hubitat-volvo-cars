@@ -78,37 +78,19 @@ jobs:
           find . -name '*.groovy' -print0 | while IFS= read -r -d $'\0' file; do
             echo "Processing file: $file"
 
-            # Use awk with a here-document for safer quoting
-            # Redirect awk output to a temporary file *on the same line* as the awk command
-            awk -v new_v="${NEW_VERSION}" -f /dev/stdin "$file" > "$file.tmp" << 'EOF_AWK'
-# Awk script starts here
-{
-  # Look for the appVersion() line returning a single-quoted string
-  # Escape parentheses and curly braces for regex matching
-  # Using '[^']*' to match any characters *except* a single quote, between the quotes
-  if ($0 ~ /String appVersion\(\) \{ return '[^']*' \}/) {
-      # Use gensub to replace the content inside the single quotes
-      # Capture the start of the line up to the first quote (group 1)
-      # Capture the end of the line from the second quote (group 2)
-      # Replace with group 1 + new_v + group 2
-      # Ensure we use the correct regex and groups for gensub
-      print gensub(/^(.*String appVersion\(\) \{ return ')[^']*('.*)$/, "\\1" new_v "\\2", "g", $0);
-  } else {
-      # Print lines that do not match
-      print;
-  }
-}
-# Awk script ends here
-EOF_AWK
+            # Use sed for in-place replacement
+            # The regex looks for the specific pattern 'String appVersion() { return '...' }'
+            # It captures the parts before and after the version string within the single quotes
+            # And replaces the whole matched line with the captured parts + the new version
+            # -i flag modifies the file in-place. On Linux (used by GitHub Actions), -i alone works.
+            # We use double quotes around the sed command so the shell variable $NEW_VERSION is expanded.
+            # We escape parentheses and curly braces as they have special meaning in regex.
+            # '[^']*' matches one or more characters that are NOT a single quote.
+            sed -i "s/^\(.*String appVersion\(\) \{ return '\)[^']*'\([ \t]*\}.*$\)/\1${NEW_VERSION}\2/" "$file"
 
-            # Move the temporary file to replace the original *after* the awk command finishes
-            # Check if the temp file was created (awk succeeded) before moving
-            if [ -f "$file.tmp" ]; then
-              mv "$file.tmp" "$file"
-            else
-              echo "Error: awk failed or produced no output for $file."
-              # Optionally, exit the script or handle this error differently
-            fi
+            # Check if sed reported an error (though sed often doesn't exit non-zero for no match)
+            # A more robust check would involve comparing file content before/after if needed,
+            # but for this simple case, the sed command is usually sufficient.
 
             # Optional: Verify change in file (for debugging)
             # echo "After update:"
