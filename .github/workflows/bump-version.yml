@@ -78,19 +78,19 @@ jobs:
           find . -name '*.groovy' -print0 | while IFS= read -r -d $'\0' file; do
             echo "Processing file: $file"
 
-            # Use sed for in-place replacement
+            # Use sed -E for in-place replacement with Extended Regular Expressions
             # The regex looks for the specific pattern 'String appVersion() { return '...' }'
             # It captures the parts before and after the version string within the single quotes
             # And replaces the whole matched line with the captured parts + the new version
             # -i flag modifies the file in-place. On Linux (used by GitHub Actions), -i alone works.
             # We use double quotes around the sed command so the shell variable $NEW_VERSION is expanded.
-            # We escape parentheses and curly braces as they have special meaning in regex.
-            # '[^']*' matches one or more characters that are NOT a single quote.
-            sed -i "s/^\(.*String appVersion\(\) \{ return '\)[^']*'\([ \t]*\}.*$\)/\1${NEW_VERSION}\2/" "$file"
-
-            # Check if sed reported an error (though sed often doesn't exit non-zero for no match)
-            # A more robust check would involve comparing file content before/after if needed,
-            # but for this simple case, the sed command is usually sufficient.
+            # In ERE:
+            #  - Literal () need escaping: appVersion\\(\\)
+            #  - Literal {} need escaping: \\{ and \\}
+            #  - Grouping () do *not* need escaping in the regex pattern, but the backreferences \1, \2 etc. in the replacement are the same.
+            #  - .* and [^']*' are the same.
+            #  - We need to double escape backslashes in the YAML string if they are part of the regex \\( -> \(
+            sed -E "s/^(.*String appVersion\\(\\) \\{\\ return ')[^']*'([ \\t]*\\}.*$) /\\1${NEW_VERSION}\\2/" "$file"
 
             # Optional: Verify change in file (for debugging)
             # echo "After update:"
