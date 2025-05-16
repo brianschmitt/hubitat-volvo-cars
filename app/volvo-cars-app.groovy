@@ -4,6 +4,7 @@
  * Description: Manages connection and communication with Volvo Cars API.
  * Handles authentication, token management, and device creation.
  */
+import groovy.json.JsonSlurper
 
 String appName() { return 'Volvo Cars' }
 String appVersion() { return '0.1.0' }
@@ -742,18 +743,23 @@ private Map getVehicleData(String vin, List<String> endpoints = null) {
         'doors': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/doors",
         'engineStatus': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/engine-status",
         'engineWarnings': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/engine",
-        'fuel': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/fuel",
         'odometer': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/odometer",
         'statistics': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/statistics",
         'tyres': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/tyres",
         'warnings': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/warnings",
         'windows': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/windows",
         'vehicle': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}",
-        // Energy API
-        'rechargeStatus': "${apiBaseUrl()}/energy/v1/vehicles/${vin}/recharge-status",
         // Location API
         'location': "${apiBaseUrl()}/location/v1/vehicles/${vin}/location",
     ]
+
+    def child = getChildDevice(vin)
+    def fuelType = child?.currentValue('fuelType') ?: 'UNKNOWN'
+    if (fuelType == 'PETROL/ELECTRIC' || fuelType == 'ELECTRIC' || fuelType == 'NONE') {
+        allEndpoints['rechargeStatus'] = "${apiBaseUrl()}/energy/v1/vehicles/${vin}/recharge-status"
+    } else if (fuelType == 'PETROL/ELECTRIC' || fuelType == 'DIESEL' || fuelType == 'PETROL') {
+        allEndpoints['fuel'] = "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/fuel"
+    }
 
     def endpointsToFetch = endpoints ?: allEndpoints.keySet()
 
@@ -764,11 +770,14 @@ private Map getVehicleData(String vin, List<String> endpoints = null) {
                 httpGet([
                         uri: url,
                         headers: apiHeaders(),
-                        contentType: 'application/json'])
+                        textParser: true]) // need to use text parser to work around the energy endpoint
                 { resp ->
                     if (resp.status == 200) {
-                        logDebug "Data for ${endpointKey} (${vin}): ${resp.data}"
-                        results[endpointKey] = resp.data
+                        String responseBodyString = resp.data.text
+                        logDebug "Data for ${endpointKey} (${vin}): ${responseBodyString}"
+                        def jsonSlurper = new JsonSlurper()
+                        def parsedJson = jsonSlurper.parseText(responseBodyString)
+                        results[endpointKey] = parsedJson
                     } else {
                         logWarn "Failed to get data for ${endpointKey} (${vin}). Status: ${resp.status}"
                         results[endpointKey] = [error: "API Error ${resp.status}"]

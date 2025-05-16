@@ -9,10 +9,10 @@
 ###
 
 @baseUrl = https://api.volvocars.com/extended-vehicle
-@vin = YOUR_VEHICLE_VIN
+@vin = {{$dotenv VEHICLE_VIN}}
 @resourceName = odometer # Example resource, change as needed (e.g., cabOpen, engineStatus)
-@vccApiKey = YOUR_VCC_API_KEY
-@accessToken = YOUR_ACCESS_TOKEN
+@vccApiKey = {{$dotenv VCC_API_KEY}}
+@accessToken = {{$dotenv ACCESS_TOKEN}}
 @vccApiOperationId = {{$randomUUID}}
 
 ###

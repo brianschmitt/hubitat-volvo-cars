@@ -61,7 +61,6 @@ jobs:
           echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"      # Store new version
 
       - name: Update version in all Groovy files
-              - name: Update version in all Groovy files
         run: |
           # Retrieve the current and new versions from the previous step's outputs
           NEW_VERSION="${{ steps.version_calc.outputs.new_version }}"

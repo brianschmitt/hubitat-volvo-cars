@@ -22,10 +22,9 @@
 @volvoAuthUrl = https://volvoid.eu.volvocars.com/as/authorization.oauth2
 @volvoTokenUrl = https://volvoid.eu.volvocars.com/as/token.oauth2
 
-# !! REPLACE THESE WITH YOUR ACTUAL VALUES !!
-@clientId = YOUR_CLIENT_ID
-@clientSecret = YOUR_CLIENT_SECRET
-@redirectUri = YOUR_APP_REDIRECT_URI # e.g., http://localhost:3000/callback (ensure this is URL-encoded for Step 1)
+@clientId = {{$dotenv CLIENT_ID}}
+@clientSecret = {{$dotenv CLIENT_SECRET}}
+@redirectUri = {{$dotenv APP_REDIRECT_URI}} # e.g., http://localhost:3000/callback (ensure this is URL-encoded for Step 1)
 @scopes = openid profile conve:vehicle_relation energy:recharge_status # Space-separated list of scopes (ensure this is URL-encoded for Step 1)
 
 
