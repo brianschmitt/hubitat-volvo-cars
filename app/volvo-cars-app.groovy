@@ -7,7 +7,7 @@
 import groovy.json.JsonSlurper
 
 String appName() { return 'Volvo Cars' }
-String appVersion() { return '0.2.0' }
+String appVersion() { return '0.3.0' }
 String nameSpace() { return 'brianschmitt' }
 
 definition(
@@ -35,6 +35,7 @@ preferences {
 
 String authApiUrl() { return 'https://volvoid.eu.volvocars.com/as/authorization.oauth2' }
 String tokenUrl() { return 'https://volvoid.eu.volvocars.com/as/token.oauth2' }
+String revokeTokenUrl() { return 'https://volvoid.eu.volvocars.com/as/revoke_token.oauth2' }
 String apiBaseUrl() { return 'https://api.volvocars.com' }
 
 void installed() {
@@ -272,7 +273,7 @@ void appButtonHandler(String btnName) {
 
 void removeVehicle() {
     String vin = app.getSetting('vinToRemove')
-    logInfo "Removing vehicle: ${vin}"
+    logDebug "Removing vehicle: ${vin}"
     com.hubitat.app.ChildDeviceWrapper child = getChildDevice(vin)
     if (child) {
         try {
@@ -318,7 +319,7 @@ void addThisVehicle() {
 }
 
 void authenticate() {
-    logInfo 'Attempting authentication...'
+    logDebug 'Attempting authentication...'
     atomicState.remove('authError')
     atomicState.remove('otpUrl')
 
@@ -327,6 +328,7 @@ void authenticate() {
         response_type: 'code',
         response_mode: 'pi.flow',
         acr_values: 'urn:volvoid:aal:bronze:2sv',
+
         scope: 'openid ' +
                 'conve:brake_status ' +
                 'conve:climatization_start_stop ' +
@@ -391,14 +393,23 @@ void authenticate() {
     }
 }
 
+def fixHttpUrl(String url) {
+    if (url.startsWith('http://')) {
+        return url.replace('http://', 'https://')
+    }
+    return url
+}
+
 void submitOtp() {
-    logInfo 'Submitting OTP...'
+    logDebug 'Submitting OTP...'
     atomicState.remove('authError')
     String otpUrl = atomicState.otpUrl
     if (!otpUrl) {
         handleAuthError('OTP submission URL not found. Please restart authentication.')
         return
     }
+
+    otpUrl = fixHttpUrl(otpUrl)
 
     Map payload = [otp: settings.otpCode]
     Map headers = apiHeaders(true, false) + ['x-xsrf-header': 'PingFederate', 'Cookie': atomicState.authCookies]
@@ -429,12 +440,12 @@ void submitOtp() {
 }
 
 void refreshTokenNow() {
-    logInfo 'Manual token refresh requested.'
+    logDebug 'Manual token refresh requested.'
     refreshToken()
 }
 
 void sendCommand(String vin, String command, Map body = null) {
-    logInfo "App requested command '${command}' for VIN ${vin}"
+    logInfo "Device requested command '${command}' for VIN ${vin}"
     if (!atomicState.accessToken) { return }
     if (now() >= atomicState.tokenExpiresAt) { return }
 
@@ -459,25 +470,29 @@ void sendCommand(String vin, String command, Map body = null) {
 
     String url = apiBaseUrl() + endpointPath
 
+    params = [
+        uri: url,
+        headers: apiHeaders(),
+        body: (body ?: [:]),
+        contentType: 'application/json',
+        timeout: 60
+    ]
+
+    logDebug "Sending command '${command}' to ${url} with body: ${params.body}"
     try {
-        asynchttpPost('processCommandCallBack', [
-                uri: url,
-                headers: apiHeaders(),
-                body: (body ?: [:]),
-                contentType: 'application/json'],
-                [command: command])
+        asynchttpPost('processCommandCallBack', params, [command: command])
     } catch (e) {
         logError "Exception sending command '${command}' for VIN ${vin}: ${e.message}"
     }
 }
 
 def processCommandCallBack(resp, data) {
-    if (resp.getStatus() == 200 || resp.getStatus() == 202) {
+    if (resp.status == 200 || resp.status == 202) {
         logDebug "Command '${data['command']}' for VIN ${resp.json.data.vin}. Status: ${resp.json.data.invokeStatus}"
         result = resp.json
     } else {
-        logError "Command '${command}' failed for VIN ${vin}. Status: ${resp.getStatus()}"
-        result = [error: "API Error ${resp.status}", responseData: resp.json]
+        logError "Command '${command}' failed for VIN ${vin}. Status: ${resp.status}"
+        result = [error: "API Error ${resp.status}"]
     }
 }
 
@@ -496,7 +511,7 @@ void refreshVehicleData(Map params) {
 
     Map apiData = getVehicleData(vin)
     if (apiData.error) {
-        logWarn "Failed to get data for ${vin}: ${apiData.error}"
+        logDebug "Failed to get data for ${vin}: ${apiData.error}"
         child.parse([error: apiData.error])
     } else {
         child.parse(apiData)
@@ -506,7 +521,7 @@ void refreshVehicleData(Map params) {
 void refreshToken() {
     logDebug 'Refreshing token...'
     if (!atomicState.refreshToken) {
-        logWarn 'No refresh token available. Please re-authenticate.'
+        logDebug 'No refresh token available. Please re-authenticate.'
         handleAuthError('Refresh token missing.')
         return
     }
@@ -551,7 +566,7 @@ private void storeTokens(Map tokenData) {
     int expiresIn = tokenData.expires_in.toInteger()
     atomicState.tokenExpiresAt = now() + (expiresIn * 1000)
     scheduleTokenRefresh(expiresIn)
-    logInfo "Tokens stored. Access token expires at ${formatExpiry(atomicState.tokenExpiresAt)}"
+    logDebug "Tokens stored. Access token expires at ${formatExpiry(atomicState.tokenExpiresAt)}"
 
     if (settings.vccApiKey != app.getSetting('vccApiKey')) {
         app.updateSetting('vccApiKey', settings.vccApiKey)
@@ -597,12 +612,14 @@ private void handleAuthResponse(Map json) {
 }
 
 private void submitUsernamePassword(String url) {
-    logInfo 'Submitting username/password...'
+    logDebug 'Submitting username/password...'
     Map payload = [
         username: settings.username,
         password: settings.password
     ]
     Map headers = apiHeaders(false, true) + ['x-xsrf-header': 'PingFederate', 'Cookie': atomicState.authCookies]
+
+    url = fixHttpUrl(url)
 
     try {
         httpPostJson([uri: url, body: payload, headers: headers, contentType: 'application/json']) { resp ->
@@ -620,7 +637,7 @@ private void submitUsernamePassword(String url) {
 }
 
 private void continueAuthentication(String url) {
-    logInfo 'Continuing authentication flow...'
+    logDebug 'Continuing authentication flow...'
     try {
         Map headers = apiHeaders(false, true) + ['x-xsrf-header': 'PingFederate', 'Cookie': atomicState.authCookies]
         httpGet([uri: url, headers: headers, contentType: 'application/json']) { resp ->
@@ -638,7 +655,7 @@ private void continueAuthentication(String url) {
 }
 
 private void requestToken(String authCode) {
-    logInfo 'Requesting token with authorization code...'
+    logDebug 'Requesting token with authorization code...'
 
     Map payload = [
         code: authCode,
@@ -722,12 +739,12 @@ private void scheduleDeviceRefresh() {
 private Map getVehicleData(String vin, List<String> endpoints = null) {
     logDebug "App requested data for VIN ${vin}, endpoints: ${endpoints ?: 'all'}"
     if (!atomicState.accessToken) {
-        logWarn "API call attempted without access token for VIN ${vin}"
+        logDebug "API call attempted without access token for VIN ${vin}"
         refreshToken()
         return [error: 'Not authenticated']
     }
     if (now() >= atomicState.tokenExpiresAt) {
-        logWarn "API call attempted with expired token for VIN ${vin}"
+        logDebug "API call attempted with expired token for VIN ${vin}"
         refreshToken()
         return [error: 'Token expired, attempting refresh']
     }
@@ -749,8 +766,9 @@ private Map getVehicleData(String vin, List<String> endpoints = null) {
         'warnings': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/warnings",
         'windows': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/windows",
         'vehicle': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}",
-        // Location API
-        'location': "${apiBaseUrl()}/location/v1/vehicles/${vin}/location",
+    // Location API
+    // TODO: disabling location endpoint for now...
+    //'location': "${apiBaseUrl()}/location/v1/vehicles/${vin}/location",
     ]
 
     def child = getChildDevice(vin)

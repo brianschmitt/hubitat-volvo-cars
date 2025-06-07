@@ -16,7 +16,7 @@
 
 ## User Interface (UI)
 
-- [ ] Display a clear error message on the Add Vehicle page if the call to list vehicles returns no results.
+- [ ] Display an error message on the Add Vehicle page if the call to list vehicles returns no results.
 - [ ] Add a visual indicator (e.g., a spinner or loading text) on the Add Vehicle page.
 - [ ] Improve on-boarding, the auth flow is a bit odd, and OTP can get stuck in a weird state.
 
@@ -25,6 +25,7 @@
 - [ ] Address any outstanding Groovy linting warnings or errors reported by the configured lint rules.
 - [ ] Write unit tests for key logic in both the app and driver. May be difficult...
 - [ ] Improve error handling throughout the app and driver.
+- [ ] Improve POST/GET request creation - Make it consistent across requests.
 
 ## Documentation & Metadata
 

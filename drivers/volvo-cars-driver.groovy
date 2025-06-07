@@ -5,7 +5,7 @@
  */
 
 String appName() { return 'Volvo Cars' }
-String appVersion() { return '0.2.0' }
+String appVersion() { return '0.3.0' }
 String nameSpace() { return 'brianschmitt' }
 
 metadata {
@@ -144,6 +144,8 @@ metadata {
 
         attribute 'apiTimestamp', 'STRING'
         attribute 'commsError', 'STRING'
+
+        attribute 'dashboard', 'STRING'
     }
 
     preferences {
@@ -281,7 +283,7 @@ void parse(Map data) {
     sendEvent(name: 'commsError', value: 'OK')
 
     if (data.error) {
-        logWarn "Error received from App: ${data.error}"
+        logDebug "Error received from App: ${data.error}"
         sendEvent(name: 'commsError', value: data.error)
         return
     }
@@ -327,6 +329,7 @@ void parse(Map data) {
         }
     }
 
+    updateDashboardAttribute()
     sendEvent(name: 'apiTimestamp', value: new Date().format('yyyy-MM-dd HH:mm:ss z', location.timeZone))
 }
 
@@ -589,4 +592,106 @@ private String formatApiTimestamp(String isoTimestamp) {
         logWarn "Could not parse timestamp '${isoTimestamp}': ${e.message}"
         return isoTimestamp
     }
+}
+
+private void updateDashboardAttribute() {
+    def lockStatus = device.currentValue('lock')
+    String lockSummary = ''
+    def runningStatus = device.currentValue('switch')
+    String runningSummary = ''
+    def chargingStatus = device.currentValue('chargingStatus')
+    String chargingSummary = ''
+
+    def distanceToEmptyBattery = device.currentValue('distanceToEmptyBattery') ?: 0
+    def distanceToEmptyTank = device.currentValue('distanceToEmptyTank') ?: 0
+
+    def distanceStatus = distanceToEmptyBattery + distanceToEmptyTank
+
+    // we might want to move this to a common property
+    def fuelType = device.currentValue('fuelType') ?: 'UNKNOWN'
+    def isElectric = false
+    if (fuelType == 'PETROL/ELECTRIC' || fuelType == 'ELECTRIC' || fuelType == 'NONE') {
+        isElectric = true
+    }
+
+    // Lock Status
+    switch (lockStatus) {
+        case 'locked':
+            lockSummary = '🔒\n'
+            break
+        case 'unlocked':
+            lockSummary = '🔓\n'
+            break
+        default:
+            lockSummary = '❓\n'
+            break
+    }
+
+    // Running Status
+    switch (runningStatus) {
+        case 'on':
+            runningSummary = '🚗\n'
+            break
+        case 'off':
+            runningSummary = '🛑\n'
+            break
+        default:
+            runningSummary = '❓\n'
+            break
+    }
+
+    // Charging Status
+    switch (chargingStatus) {
+        case 'CHARGING':
+            chargingSummary = '⚡️ Charging\n'
+            break
+        case 'IDLE':
+            chargingSummary = '🔋 Idle\n'
+            break
+        case 'DONE':
+            chargingSummary = '✅ Done\n'
+            break
+        case 'FAULT':
+            chargingSummary = '❌ Fault\n'
+            break
+        case 'SCHEDULED':
+            chargingSummary = '⏰ Scheduled\n'
+            break
+        default:
+            chargingSummary = '❓ Unknown\n'
+            break
+    }
+
+    String statusColor = ''
+    if (lockStatus == 'locked') {
+        statusColor = 'color: #4CAF50;'
+    } else {
+        statusColor = 'color: #F44336;'
+    }
+
+    def html = """
+    <style>
+        .container { padding: 5px; font-size: 14px; background-color: ${statusColor} }
+        .title { font-weight: bold; text-align: center; margin-bottom: 5px; }
+        .status { font-weight: bold; text-align: center; ${statusColor} }
+        .line { display: flex; justify-content: space-between; margin-bottom: 2px; }
+        .label { color: #888; flex-basis: 40%; }
+        .value { text-align: right; font-weight: normal; flex-basis: 60%; }
+    </style>
+    <div class="container">
+        <div class="title">Range: ${distanceStatus}</div>
+        <div class="status"><span class="label">Doors</span> <span class="value">${lockSummary}</span></div>
+        <div class="status"><span class="label">Engine</span> <span class="value">${runningSummary}</span></div>
+    """
+
+    if (isElectric) {
+        html += """
+        <div class="status"><span class="label">Charge</span> <span class="value">${chargingSummary}</span></div>
+        """
+    }
+
+    html += '''
+    </div>
+    '''
+    sendEvent(name: 'dashboard', value: html, isStateChange: true)
 }
