@@ -1,7 +1,7 @@
 {
   "packageName": "Hubitat Volvo Car Package",
   "author": "Brian Schmitt",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "dateReleased": "2025-05-01",
   "documentationLink": "https://github.com/brianschmitt/hubitat-volvo-cars/blob/main/README.md",
   "communityLink": "https://community.hubitat.com/t/release-volvo-cars-integration-official-api-for-hubitat/153428",
@@ -16,7 +16,7 @@
       "required": true,
       "oauth": false,
       "configPage": true,
-      "version": "0.2.0"
+      "version": "0.3.0"
     }
   ],
   "drivers": [
@@ -26,7 +26,7 @@
       "namespace": "brianschmitt",
       "location": "https://raw.githubusercontent.com/brianschmitt/hubitat-volvo-cars/main/drivers/volvo-cars-driver.groovy",
       "required": true,
-      "version": "0.2.0"
+      "version": "0.3.0"
     }
   ]
 }
