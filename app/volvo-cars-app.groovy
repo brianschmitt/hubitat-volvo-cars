@@ -7,7 +7,7 @@
 import groovy.json.JsonSlurper
 
 String appName() { return 'Volvo Cars' }
-String appVersion() { return '0.4.0' }
+String appVersion() { return '0.3.0' }
 String nameSpace() { return 'brianschmitt' }
 
 definition(
@@ -393,7 +393,7 @@ void authenticate() {
     }
 }
 
-String fixHttpUrl(String url) {
+def fixHttpUrl(String url) {
     if (url.startsWith('http://')) {
         return url.replace('http://', 'https://')
     }
@@ -473,9 +473,9 @@ void sendCommand(String vin, String command, Map body = null) {
     params = [
         uri: url,
         headers: apiHeaders(),
-        body: body ? groovy.json.JsonOutput.toJson(body) : '{}',
+        body: (body ?: [:]),
         contentType: 'application/json',
-        timeout: 80
+        timeout: 60
     ]
 
     logDebug "Sending command '${command}' to ${url} with body: ${params.body}"
@@ -491,7 +491,7 @@ def processCommandCallBack(resp, data) {
         logDebug "Command '${data['command']}' for VIN ${resp.json.data.vin}. Status: ${resp.json.data.invokeStatus}"
         result = resp.json
     } else {
-        logError "Command '${data['command']}' failed for VIN ${vin}. Status: ${resp.status}"
+        logError "Command '${command}' failed for VIN ${vin}. Status: ${resp.status}"
         result = [error: "API Error ${resp.status}"]
     }
 }
@@ -511,7 +511,7 @@ void refreshVehicleData(Map params) {
 
     Map apiData = getVehicleData(vin)
     if (apiData.error) {
-        logWarn "Failed to get data for ${vin}: ${apiData.error}"
+        logDebug "Failed to get data for ${vin}: ${apiData.error}"
         child.parse([error: apiData.error])
     } else {
         child.parse(apiData)
@@ -538,8 +538,7 @@ void refreshToken() {
                 body: payload,
                 headers: headers,
                 requestContentType: 'application/x-www-form-urlencoded',
-                contentType : 'application/json',
-                timeout: 60])
+                contentType : 'application/json'])
         { resp ->
             if (resp.status == 200) {
                 storeTokens(resp.data)
@@ -572,8 +571,6 @@ private void storeTokens(Map tokenData) {
     if (settings.vccApiKey != app.getSetting('vccApiKey')) {
         app.updateSetting('vccApiKey', settings.vccApiKey)
     }
-
-    scheduleDeviceRefresh()
 }
 
 private void handleAuthResponse(Map json) {
@@ -581,7 +578,7 @@ private void handleAuthResponse(Map json) {
     String status = json.status
     logDebug "Authentication status: ${status}"
     if (status == 'COMPLETED') {
-        String code = json?.authorizeResponse?.code
+        def code = json?.authorizeResponse?.code
         if (code) {
             requestToken(code)
         } else {
@@ -622,10 +619,10 @@ private void submitUsernamePassword(String url) {
     ]
     Map headers = apiHeaders(false, true) + ['x-xsrf-header': 'PingFederate', 'Cookie': atomicState.authCookies]
 
-    String httpsUrl = fixHttpUrl(url)
+    url = fixHttpUrl(url)
 
     try {
-        httpPostJson([uri: httpsUrl, body: payload, headers: headers, contentType: 'application/json']) { resp ->
+        httpPostJson([uri: url, body: payload, headers: headers, contentType: 'application/json']) { resp ->
             if (resp.status == 200 || resp.status == 400) {
                 def cookies = resp?.headers?.'Set-Cookie'
                 atomicState.authCookies = cookies
@@ -693,7 +690,6 @@ private void clearTokens() {
     atomicState.remove('refreshToken')
     atomicState.remove('tokenExpiresAt')
     unschedule('refreshToken')
-    unschedule('refreshAllVehicleData')
 }
 
 private void handleAuthError(String message, String responseData = null) {
@@ -755,7 +751,7 @@ private Map getVehicleData(String vin, List<String> endpoints = null) {
 
     Map results = [:]
 
-    Map allEndpoints = [
+    def allEndpoints = [
         //Connected Vehicle API
         'availability': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/command-accessibility",
         'brakes': "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/brakes",
@@ -819,7 +815,7 @@ private Map getVehicleData(String vin, List<String> endpoints = null) {
 }
 
 private Map getVehicles() {
-    String url = "${apiBaseUrl()}/connected-vehicle/v2/vehicles"
+    def url = "${apiBaseUrl()}/connected-vehicle/v2/vehicles"
 
     try {
         httpGet([uri: url, headers: apiHeaders(), contentType: 'application/json']) { resp ->
@@ -836,11 +832,6 @@ private Map getVehicles() {
 }
 
 void refreshAllVehicleData() {
-    if (!atomicState.refreshToken) {
-        logWarn 'Skipping scheduled vehicle data refresh: refresh token missing. Please re-authenticate.'
-        unschedule('refreshAllVehicleData')
-        return
-    }
     logDebug 'Executing scheduled refresh for all vehicles'
     getChildDevices()?.each { child ->
         refreshVehicleData([vin: child.deviceNetworkId])
@@ -849,10 +840,9 @@ void refreshAllVehicleData() {
 }
 
 private Map apiHeaders(boolean includeAuth = true, boolean includeStandardAuth = false) {
-    Map headers = [
+    def headers = [
         'User-Agent': 'vca-android/123',
-        'vcc-api-key': settings.vccApiKey,
-        'vcc-api-operationId': UUID.randomUUID().toString()
+        'vcc-api-key': settings.vccApiKey
     ]
     if (includeAuth && atomicState.accessToken) {
         headers['Authorization'] = "Bearer ${atomicState.accessToken}"

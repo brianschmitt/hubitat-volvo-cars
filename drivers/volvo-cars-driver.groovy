@@ -5,7 +5,7 @@
  */
 
 String appName() { return 'Volvo Cars' }
-String appVersion() { return '0.4.0' }
+String appVersion() { return '0.3.0' }
 String nameSpace() { return 'brianschmitt' }
 
 metadata {
@@ -47,7 +47,6 @@ metadata {
         attribute 'serviceTrigger', 'ENUM', ['CALENDAR_TIME', 'DISTANCE', 'ENGINE_HOURS', 'UNSPECIFIED', 'UNKNOWN']
         attribute 'engineTimeToService', 'NUMBER'
         attribute 'distanceToService', 'NUMBER'
-        attribute 'washerFluidLevelWarning', 'NUMBER'
         attribute 'timeToService', 'NUMBER'
 
         attribute 'brakeFluid', 'ENUM', ['UNSPECIFIED', 'NO_WARNING', 'TOO_LOW']
@@ -313,14 +312,13 @@ void parse(Map data) {
                         case 'warnings':       parseWarnings(endpointData); break
                         case 'windows':        parseWindows(endpointData); break
                         case 'rechargeStatus': parseRechargeStatus(endpointData); break
-                        // TODO: disabled until we re-enable in app code
-                        //case 'location':       parseLocation(endpointData); break
+                        case 'location':       parseLocation(parsedData); break
                         default:
                             logDebug "No specific parser for endpoint: ${key}"
                             break
                     }
-                } else if (endpointData?.error) {
-                    logWarn "API returned error for ${key}: ${endpointData.error}"
+                } else if (parsedData?.error) {
+                    logWarn "API returned error for ${key}: ${parsedData.error}"
                 }
             } catch (e) {
                 logError "Error parsing JSON for key ${key}: ${e.message}. Raw data: ${rawJson}"
@@ -355,8 +353,7 @@ private void parseDiagnostics(Map data) {
     parseField(data, 'serviceWarning', 'serviceStatus')
     parseField(data, 'serviceTrigger', 'serviceTrigger')
     parseField(data, 'engineHoursToService', 'engineTimeToService')
-    parseField(data, 'distanceToService', 'distanceToService')
-    parseField(data, 'washerFluidLevelWarning', 'washerFluidLevelWarning')
+    parseField(data, 'distanceToServiceKm', 'distanceToService')
     parseField(data, 'timeToService', 'timeToService', { x -> x.value.toInteger() * (x.unit == 'months' ? 1 : 30) })
 }
 
@@ -518,7 +515,7 @@ private void parseKeyValue(Map data, String sourceKey, String targetAttribute) {
     }
 }
 
-private convertToImperial(def value, String unit) {
+private def convertToImperial(def value, String unit) {
     if (value instanceof Number) {
         double doubleValue = value.toDouble()
 

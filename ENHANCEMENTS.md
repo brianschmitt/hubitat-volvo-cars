@@ -3,10 +3,10 @@
 ## Core App & API
 
 - [ ] Implement true oauth with Hubitat & Volvo - Need to create (and get approved) a Volvo Cars App
-- [ ] Implement partial data refresh to reduce the number of API calls. (Fast / Slow polling)
+- [ ] Implement partial data refresh to reduce the number of API calls.
 - [ ] Handling or not issuing the location and recharge status calls.
 - [ ] Implement async calls where possible.
-- [ ] Implement the 'Presence Sensor' capability - Requires location to function
+- [ ] Implement the 'Presence Sensor' capability.
 - [ ] Implement calculation/mapping logic in the driver to populate the `Battery` attribute using fuel level data for non-electric vehicles.
 
 ## Testing / Verification
