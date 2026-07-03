@@ -322,6 +322,7 @@ void authenticate() {
     logDebug 'Attempting authentication...'
     atomicState.remove('authError')
     atomicState.remove('otpUrl')
+    atomicState.remove('consecutiveOtpVerified')
 
     Map payload = [
         client_id: 'h4Yf0b',
@@ -424,6 +425,9 @@ void submitOtp() {
                 headers: headers,
                 contentType: 'application/json'])
         { resp ->
+            logDebug "OTP submission response status: ${resp.status}"
+            logDebug "OTP submission response body: ${resp.data}"
+            logDebug "OTP submission response headers: ${resp.headers}"
             if (resp.status == 200) {
                 app.removeSetting('password')
                 def cookies = resp?.headers?.'Set-Cookie'
@@ -566,6 +570,7 @@ private void storeTokens(Map tokenData) {
     int expiresIn = tokenData.expires_in.toInteger()
     atomicState.tokenExpiresAt = now() + (expiresIn * 1000)
     scheduleTokenRefresh(expiresIn)
+    atomicState.remove('consecutiveOtpVerified')
     logDebug "Tokens stored. Access token expires at ${formatExpiry(atomicState.tokenExpiresAt)}"
 
     if (settings.vccApiKey != app.getSetting('vccApiKey')) {
@@ -577,6 +582,21 @@ private void handleAuthResponse(Map json) {
     logDebug "Handling auth response: ${json}"
     String status = json.status
     logDebug "Authentication status: ${status}"
+    // Loop protection: detect repeated OTP_VERIFIED to prevent infinite recursion
+    int consecutiveOtpVerified = atomicState.consecutiveOtpVerified ?: 0
+    if (status == 'OTP_VERIFIED') {
+        consecutiveOtpVerified++
+        atomicState.consecutiveOtpVerified = consecutiveOtpVerified
+        logWarn "OTP_VERIFIED received ${consecutiveOtpVerified} time(s) in a row — possible loop"
+        if (consecutiveOtpVerified > 3) {
+            handleAuthError("Authentication loop detected: OTP_VERIFIED repeated ${consecutiveOtpVerified} times. The continueAuthentication endpoint may require a different method or step. Check debug logs for details.")
+            atomicState.remove('consecutiveOtpVerified')
+            return
+        }
+    } else {
+        atomicState.remove('consecutiveOtpVerified')
+    }
+
     if (status == 'COMPLETED') {
         def code = json?.authorizeResponse?.code
         if (code) {
@@ -592,7 +612,10 @@ private void handleAuthResponse(Map json) {
             handleAuthError('OTP required, but OTP submission URL not found in response.')
         }
     } else if (status == 'OTP_VERIFIED') {
-        String continueUrl = json?._links?.continueAuthentication?.href + '?action=continueAuthentication'
+        String rawHref = json?._links?.continueAuthentication?.href
+        logDebug "OTP_VERIFIED: raw continueAuthentication href: ${rawHref}"
+        String continueUrl = rawHref ? rawHref + '?action=continueAuthentication' : null
+        logDebug "OTP_VERIFIED: final continueUrl: ${continueUrl}"
         if (continueUrl) {
             continueAuthentication(continueUrl)
         } else {
@@ -637,12 +660,20 @@ private void submitUsernamePassword(String url) {
 }
 
 private void continueAuthentication(String url) {
-    logDebug 'Continuing authentication flow...'
+    url = fixHttpUrl(url)
+    logDebug "Continuing authentication flow... URL: ${url}"
+    logDebug "Cookies being sent: ${atomicState.authCookies}"
     try {
         Map headers = apiHeaders(false, true) + ['x-xsrf-header': 'PingFederate', 'Cookie': atomicState.authCookies]
-        httpGet([uri: url, headers: headers, contentType: 'application/json']) { resp ->
+        logDebug "Continue auth headers: ${headers}"
+        // Use POST (not GET) to advance the flow — GET only reads current state
+        httpPostJson([uri: url, body: [:], headers: headers, contentType: 'application/json']) { resp ->
+            logDebug "Continue auth response status: ${resp.status}"
+            logDebug "Continue auth response body: ${resp.data}"
+            logDebug "Continue auth response headers: ${resp.headers}"
             if (resp.status == 200 || resp.status == 400) {
                 def cookies = resp?.headers?.'Set-Cookie'
+                logDebug "New cookies from continue auth: ${cookies}"
                 atomicState.authCookies = cookies
                 handleAuthResponse(resp.data)
              } else {
