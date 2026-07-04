@@ -447,6 +447,11 @@ private void parseVehicle(Map data) {
     parseKeyValue(data, 'model', 'model')
     parseKeyValue(data, 'upholstery', 'upholstery')
     parseKeyValue(data, 'steering', 'steering')
+
+    def exteriorImage = data.images?.exteriorImageUrl
+    if (exteriorImage) {
+        state['exteriorImageUrl'] = exteriorImage
+    }
 }
 
 private void parseWarnings(Map data) {
@@ -560,6 +565,7 @@ private void sendUpdatedEvent(String targetAttribute, def value, String unit = n
     if (currentVal.toString() != value.toString() || currentStoredUnit != unit) {
         logDebug "Updating ${targetAttribute} from ${currentVal} to ${value} ${unit ?: ''}"
         sendEvent(name: targetAttribute, value: value, unit: unit)
+        state["val_${targetAttribute}"] = value
         if (unit != null) {
             state[storedUnitKey] = unit
         } else {
@@ -574,6 +580,7 @@ private void updateLockCapability(String lockValue) {
         String lockState = (lockValue == 'LOCKED') ? 'locked' : 'unlocked'
         if (device.currentValue('lock') != lockState) {
             sendEvent(name: 'lock', value: lockState)
+            state['val_lock'] = lockState
             logDebug "Updated lock capability: ${lockState}"
         }
     }
@@ -598,16 +605,22 @@ private String formatApiTimestamp(String isoTimestamp) {
     }
 }
 
+private def getDashboardValue(String attr) {
+    def val = state["val_${attr}"]
+    if (val != null) return val
+    return device.currentValue(attr)
+}
+
 private void updateDashboardAttribute() {
-    def lockStatus = device.currentValue('lock')
+    def lockStatus = getDashboardValue('lock')
     String lockSummary = ''
-    def runningStatus = device.currentValue('switch')
+    def runningStatus = getDashboardValue('switch')
     String runningSummary = ''
-    def chargingStatus = device.currentValue('chargingStatus')
+    def chargingStatus = getDashboardValue('chargingStatus')
     String chargingSummary = ''
 
-    def distanceToEmptyBattery = device.currentValue('distanceToEmptyBattery') ?: 0
-    def distanceToEmptyTank = device.currentValue('distanceToEmptyTank') ?: 0
+    def distanceToEmptyBattery = getDashboardValue('distanceToEmptyBattery') ?: 0
+    def distanceToEmptyTank = getDashboardValue('distanceToEmptyTank') ?: 0
 
     def distanceStatus = distanceToEmptyBattery + distanceToEmptyTank
 
@@ -673,9 +686,15 @@ private void updateDashboardAttribute() {
         statusColor = 'color: #F44336;'
     }
 
+    def exteriorImage = state['exteriorImageUrl']
+    def bgStyle = ''
+    if (exteriorImage) {
+        bgStyle = "background-image: url('${exteriorImage}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
+    }
+
     def html = """
     <style>
-        .container { padding: 5px; font-size: 14px; background-color: ${statusColor} }
+        .container { padding: 5px; font-size: 14px; background-color: ${statusColor}; ${bgStyle} }
         .title { font-weight: bold; text-align: center; margin-bottom: 5px; }
         .status { font-weight: bold; text-align: center; ${statusColor} }
         .line { display: flex; justify-content: space-between; margin-bottom: 2px; }
