@@ -412,8 +412,8 @@ private void parseRechargeStatus(Map data) {
     parseField(data, 'targetBatteryChargeLevel', 'targetBatteryChargeLevel')
     parseField(data, 'chargingCurrentLimit', 'chargingCurrentLimit')
     parseField(data, 'estimatedChargingTimeToTargetBatteryChargeLevel', 'estimatedChargingTime')
-    parseKeyValue(data, 'chargingType', 'chargingType')
-    parseKeyValue(data, 'chargerPowerStatus', 'chargerPowerStatus')
+    parseField(data, 'chargingType', 'chargingType')
+    parseField(data, 'chargerPowerStatus', 'chargerPowerStatus')
     parseField(data, 'chargingPower', 'chargingPower')
 }
 
