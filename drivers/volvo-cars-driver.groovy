@@ -694,14 +694,18 @@ private void updateDashboardAttribute() {
 
     def html = """
     <style>
-        .container { padding: 5px; font-size: 14px; background-color: ${statusColor}; ${bgStyle} }
-        .title { font-weight: bold; text-align: center; margin-bottom: 5px; }
-        .status { font-weight: bold; text-align: center; ${statusColor} }
+        .wrapper { position: relative; padding: 5px; font-size: 14px; ${bgStyle} border-radius: 8px; }
+        .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.55); border-radius: 8px; }
+        .content { position: relative; z-index: 1; }
+        .title { font-weight: bold; text-align: center; margin-bottom: 5px; color: #fff; }
+        .status { font-weight: bold; text-align: center; color: #fff; }
         .line { display: flex; justify-content: space-between; margin-bottom: 2px; }
-        .label { color: #888; flex-basis: 40%; }
+        .label { color: #ccc; flex-basis: 40%; }
         .value { text-align: right; font-weight: normal; flex-basis: 60%; }
     </style>
-    <div class="container">
+    <div class="wrapper">
+        <div class="overlay"></div>
+        <div class="content">
         <div class="title">Range: ${distanceStatus}</div>
         <div class="status"><span class="label">Doors</span> <span class="value">${lockSummary}</span></div>
         <div class="status"><span class="label">Engine</span> <span class="value">${runningSummary}</span></div>
@@ -714,6 +718,7 @@ private void updateDashboardAttribute() {
     }
 
     html += '''
+        </div>
     </div>
     '''
     sendEvent(name: 'dashboard', value: html, isStateChange: true)
