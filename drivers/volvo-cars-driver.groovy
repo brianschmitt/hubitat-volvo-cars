@@ -79,10 +79,13 @@ metadata {
         attribute 'chargingStatus', 'ENUM', ['CHARGING', 'IDLE', 'DONE', 'FAULT', 'SCHEDULED', 'UNSPECIFIED']
         attribute('chargingConnectionStatus',
                     'ENUM',
-                    ['CONNECTED_AC', 'CONNECTED_DC', 'DISCONNECTED', 'FAULT', 'UNSPECIFIED'])
+                    ['CONNECTED', 'DISCONNECTED', 'FAULT', 'UNSPECIFIED'])
         attribute 'targetBatteryChargeLevel', 'NUMBER'
         attribute 'chargingCurrentLimit', 'NUMBER'
         attribute 'estimatedChargingTime', 'NUMBER'
+        attribute 'chargingType', 'STRING'
+        attribute 'chargerPowerStatus', 'STRING'
+        attribute 'chargingPower', 'NUMBER'
 
         attribute 'averageFuelConsumption', 'NUMBER'
         attribute 'averageEnergyConsumption', 'NUMBER'
@@ -404,13 +407,14 @@ private void parseOdometer(Map data) {
 private void parseRechargeStatus(Map data) {
     parseField(data, 'batteryChargeLevel', 'battery')
     parseField(data, 'electricRange', 'distanceToEmptyBattery')
-    parseField(data, 'chargingSystemStatus', 'chargingStatus',
-                { x -> x.value?.replace('charging_system_', '') })
-    parseField(data, 'chargingConnectionStatus', 'chargingConnectionStatus',
-                { x -> x.value?.replace('connection_status_', '') })
+    parseField(data, 'chargingStatus', 'chargingStatus')
+    parseField(data, 'chargerConnectionStatus', 'chargingConnectionStatus')
     parseField(data, 'targetBatteryChargeLevel', 'targetBatteryChargeLevel')
     parseField(data, 'chargingCurrentLimit', 'chargingCurrentLimit')
-    parseField(data, 'estimatedChargingTime', 'estimatedChargingTime')
+    parseField(data, 'estimatedChargingTimeToTargetBatteryChargeLevel', 'estimatedChargingTime')
+    parseKeyValue(data, 'chargingType', 'chargingType')
+    parseKeyValue(data, 'chargerPowerStatus', 'chargerPowerStatus')
+    parseField(data, 'chargingPower', 'chargingPower')
 }
 
 private void parseStatistics(Map data) {

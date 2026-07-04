@@ -805,7 +805,7 @@ private Map getVehicleData(String vin, List<String> endpoints = null) {
     def child = getChildDevice(vin)
     def fuelType = child?.currentValue('fuelType') ?: 'UNKNOWN'
     if (fuelType == 'PETROL/ELECTRIC' || fuelType == 'ELECTRIC' || fuelType == 'NONE') {
-        allEndpoints['rechargeStatus'] = "${apiBaseUrl()}/energy/v1/vehicles/${vin}/recharge-status"
+        allEndpoints['rechargeStatus'] = "${apiBaseUrl()}/energy/v2/vehicles/${vin}/state"
     } else if (fuelType == 'PETROL/ELECTRIC' || fuelType == 'DIESEL' || fuelType == 'PETROL') {
         allEndpoints['fuel'] = "${apiBaseUrl()}/connected-vehicle/v2/vehicles/${vin}/fuel"
     }
@@ -826,7 +826,12 @@ private Map getVehicleData(String vin, List<String> endpoints = null) {
                         logDebug "Data for ${endpointKey} (${vin}): ${responseBodyString}"
                         def jsonSlurper = new JsonSlurper()
                         def parsedJson = jsonSlurper.parseText(responseBodyString)
-                        results[endpointKey] = parsedJson
+                        // Energy v2 returns flat fields without `data` wrapper; normalize it
+                        if (!parsedJson.data && parsedJson.batteryChargeLevel) {
+                            results[endpointKey] = [data: parsedJson]
+                        } else {
+                            results[endpointKey] = parsedJson
+                        }
                     } else {
                         logWarn "Failed to get data for ${endpointKey} (${vin}). Status: ${resp.status}"
                         results[endpointKey] = [error: "API Error ${resp.status}"]
