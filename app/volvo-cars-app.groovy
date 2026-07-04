@@ -826,7 +826,12 @@ private Map getVehicleData(String vin, List<String> endpoints = null) {
                         logDebug "Data for ${endpointKey} (${vin}): ${responseBodyString}"
                         def jsonSlurper = new JsonSlurper()
                         def parsedJson = jsonSlurper.parseText(responseBodyString)
-                        results[endpointKey] = parsedJson
+                        // Energy v2 returns flat fields without `data` wrapper; normalize it
+                        if (!parsedJson.data && parsedJson.batteryChargeLevel) {
+                            results[endpointKey] = [data: parsedJson]
+                        } else {
+                            results[endpointKey] = parsedJson
+                        }
                     } else {
                         logWarn "Failed to get data for ${endpointKey} (${vin}). Status: ${resp.status}"
                         results[endpointKey] = [error: "API Error ${resp.status}"]
