@@ -689,37 +689,16 @@ private void updateDashboardAttribute() {
     def exteriorImage = state['exteriorImageUrl']
     def bgStyle = ''
     if (exteriorImage) {
-        bgStyle = "background-image: url('${exteriorImage}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
+        def imgUrl = exteriorImage.split('?')[0]
+        bgStyle = "background:url('${imgUrl}') center/cover no-repeat;"
     }
 
-    def html = """
-    <style>
-        .wrapper { position: relative; padding: 5px; font-size: 14px; ${bgStyle} border-radius: 8px; }
-        .overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.55); border-radius: 8px; }
-        .content { position: relative; z-index: 1; }
-        .title { font-weight: bold; text-align: center; margin-bottom: 5px; color: #fff; }
-        .status { font-weight: bold; text-align: center; color: #fff; }
-        .line { display: flex; justify-content: space-between; margin-bottom: 2px; }
-        .label { color: #ccc; flex-basis: 40%; }
-        .value { text-align: right; font-weight: normal; flex-basis: 60%; }
-    </style>
-    <div class="wrapper">
-        <div class="overlay"></div>
-        <div class="content">
-        <div class="title">Range: ${distanceStatus}</div>
-        <div class="status"><span class="label">Doors</span> <span class="value">${lockSummary}</span></div>
-        <div class="status"><span class="label">Engine</span> <span class="value">${runningSummary}</span></div>
-    """
+    def html = """<style>.w{position:relative;padding:5px;font-size:14px;${bgStyle}border-radius:8px}.o{position:absolute;inset:0;background:rgba(0,0,0,0.55);border-radius:8px}.c{position:relative;z-index:1}.t{font-weight:bold;text-align:center;margin-bottom:5px;color:#fff}.s{font-weight:bold;text-align:center;color:#fff}.l{color:#ccc;flex-basis:40%}.v{text-align:right;flex-basis:60%}</style><div class="w"><div class="o"></div><div class="c"><div class="t">Range: ${distanceStatus}</div><div class="s"><span class="l">Doors</span> <span class="v">${lockSummary}</span></div><div class="s"><span class="l">Engine</span> <span class="v">${runningSummary}</span></div>"""
 
     if (isElectric) {
-        html += """
-        <div class="status"><span class="label">Charge</span> <span class="value">${chargingSummary}</span></div>
-        """
+        html += "<div class=\"s\"><span class=\"l\">Charge</span> <span class=\"v\">${chargingSummary}</span></div>"
     }
 
-    html += '''
-        </div>
-    </div>
-    '''
+    html += "</div></div>"
     sendEvent(name: 'dashboard', value: html, isStateChange: true)
 }
