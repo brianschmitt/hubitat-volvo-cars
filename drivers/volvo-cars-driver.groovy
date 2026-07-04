@@ -689,7 +689,7 @@ private void updateDashboardAttribute() {
     def exteriorImage = state['exteriorImageUrl']
     def bgStyle = ''
     if (exteriorImage) {
-        def imgUrl = exteriorImage.split('?')[0]
+        def imgUrl = exteriorImage.split('\?')[0]
         bgStyle = "background:url('${imgUrl}') center/cover no-repeat;"
     }
 
