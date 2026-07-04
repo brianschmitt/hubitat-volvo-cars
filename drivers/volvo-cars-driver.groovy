@@ -700,5 +700,6 @@ private void updateDashboardAttribute() {
     }
 
     html += "</div></div>"
+    logDebug "Dashboard HTML (${html.length()} chars): ${html}"
     sendEvent(name: 'dashboard', value: html, isStateChange: true)
 }
